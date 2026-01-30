@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Companies House API
-COMPANIES_HOUSE_API_KEY = os.getenv("COMPANIES_HOUSE_API_KEY", "48d17266-ff2e-425f-9b20-7dcc9b25bb79")
+COMPANIES_HOUSE_API_KEY = os.getenv("COMPANIES_HOUSE_API_KEY")
 COMPANIES_HOUSE_BASE_URL = "https://api.company-information.service.gov.uk"
 
 # API Settings
