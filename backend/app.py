@@ -58,6 +58,8 @@ class SearchRequest(BaseModel):
 
 class ExportRequest(BaseModel):
     companies: List[dict]
+    columns: Optional[List[str]] = None
+    column_names: Optional[dict] = None
 
 
 # Store results in memory for export (in production, use Redis or similar)
@@ -164,7 +166,11 @@ async def export_csv(request: ExportRequest):
     if not request.companies:
         raise HTTPException(status_code=400, detail="No companies to export")
 
-    csv_data = export_to_csv(request.companies)
+    csv_data = export_to_csv(
+        request.companies,
+        columns=request.columns,
+        column_names=request.column_names
+    )
 
     return StreamingResponse(
         csv_data,
@@ -181,7 +187,11 @@ async def export_excel(request: ExportRequest):
     if not request.companies:
         raise HTTPException(status_code=400, detail="No companies to export")
 
-    excel_data = export_to_excel(request.companies)
+    excel_data = export_to_excel(
+        request.companies,
+        columns=request.columns,
+        column_names=request.column_names
+    )
 
     return StreamingResponse(
         excel_data,

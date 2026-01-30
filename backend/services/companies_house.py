@@ -882,6 +882,10 @@ class CompaniesHouseAPI:
         """Process a company item from the API response."""
         address = item.get('registered_office_address', {})
         sic_codes = item.get('sic_codes', [])
+        accounts = item.get('accounts', {})
+        confirmation_statement = item.get('confirmation_statement', {})
+        links = item.get('links', {})
+        previous_names = item.get('previous_company_names', [])
 
         # Get SIC descriptions
         sic_descriptions = []
@@ -889,21 +893,61 @@ class CompaniesHouseAPI:
             desc = SIC_DESCRIPTIONS.get(sic, 'Unknown')
             sic_descriptions.append(desc)
 
+        # Get last accounts info
+        last_accounts = accounts.get('last_accounts', {})
+        next_accounts = accounts.get('next_accounts', {})
+
+        # Format previous names
+        prev_names_list = [pn.get('name', '') for pn in previous_names if pn.get('name')]
+
         return {
+            # Basic Info
             'company_number': item.get('company_number', ''),
             'company_name': item.get('company_name', ''),
             'company_status': item.get('company_status', ''),
             'company_type': item.get('company_type', ''),
             'date_of_creation': item.get('date_of_creation', ''),
+            'date_of_cessation': item.get('date_of_cessation', ''),
+
+            # SIC Codes
             'sic_codes': ', '.join(sic_codes) if sic_codes else '',
             'sic_descriptions': ', '.join(sic_descriptions) if sic_descriptions else '',
+
+            # Address
             'address_line_1': address.get('address_line_1', ''),
             'address_line_2': address.get('address_line_2', ''),
             'locality': address.get('locality', ''),
             'region': address.get('region', ''),
             'postal_code': address.get('postal_code', ''),
             'country': address.get('country', ''),
-            'full_address': self._format_address(address)
+            'full_address': self._format_address(address),
+
+            # Accounts Information
+            'accounts_overdue': 'Yes' if accounts.get('overdue') else 'No',
+            'last_accounts_date': last_accounts.get('made_up_to', ''),
+            'last_accounts_type': last_accounts.get('type', ''),
+            'next_accounts_due': next_accounts.get('due_on', ''),
+            'next_accounts_overdue': 'Yes' if next_accounts.get('overdue') else 'No',
+
+            # Confirmation Statement
+            'confirmation_statement_last': confirmation_statement.get('last_made_up_to', ''),
+            'confirmation_statement_next_due': confirmation_statement.get('next_due', ''),
+            'confirmation_statement_overdue': 'Yes' if confirmation_statement.get('overdue') else 'No',
+
+            # Additional Info
+            'jurisdiction': item.get('jurisdiction', ''),
+            'has_charges': 'Yes' if item.get('has_charges') else 'No',
+            'has_insolvency_history': 'Yes' if item.get('has_insolvency_history') else 'No',
+            'has_been_liquidated': 'Yes' if item.get('has_been_liquidated') else 'No',
+            'is_community_interest_company': 'Yes' if item.get('is_community_interest_company') else 'No',
+            'registered_office_in_dispute': 'Yes' if item.get('registered_office_is_in_dispute') else 'No',
+            'undeliverable_address': 'Yes' if item.get('undeliverable_registered_office_address') else 'No',
+
+            # Previous Names
+            'previous_names': '; '.join(prev_names_list) if prev_names_list else '',
+
+            # Links (for reference)
+            'companies_house_url': f"https://find-and-update.company-information.service.gov.uk/company/{item.get('company_number', '')}"
         }
 
     def _format_address(self, address: Dict[str, Any]) -> str:

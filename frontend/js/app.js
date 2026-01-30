@@ -11,6 +11,42 @@ let currentResults = [];
 // DataTable instance
 let dataTable = null;
 
+// All available columns with their display names
+const ALL_COLUMNS = {
+    'company_number': 'Company Number',
+    'company_name': 'Company Name',
+    'company_status': 'Status',
+    'company_type': 'Type',
+    'date_of_creation': 'Date Created',
+    'date_of_cessation': 'Date Ceased',
+    'jurisdiction': 'Jurisdiction',
+    'sic_codes': 'SIC Codes',
+    'sic_descriptions': 'SIC Descriptions',
+    'full_address': 'Full Address',
+    'address_line_1': 'Address Line 1',
+    'address_line_2': 'Address Line 2',
+    'locality': 'City/Town',
+    'region': 'Region',
+    'postal_code': 'Postcode',
+    'country': 'Country',
+    'accounts_overdue': 'Accounts Overdue',
+    'last_accounts_date': 'Last Accounts Date',
+    'last_accounts_type': 'Accounts Type',
+    'next_accounts_due': 'Next Accounts Due',
+    'next_accounts_overdue': 'Next Accounts Overdue',
+    'confirmation_statement_last': 'Last Confirmation',
+    'confirmation_statement_next_due': 'Next Confirmation Due',
+    'confirmation_statement_overdue': 'Confirmation Overdue',
+    'has_charges': 'Has Charges',
+    'has_insolvency_history': 'Insolvency History',
+    'has_been_liquidated': 'Been Liquidated',
+    'is_community_interest_company': 'CIC',
+    'registered_office_in_dispute': 'Address Disputed',
+    'undeliverable_address': 'Undeliverable Address',
+    'previous_names': 'Previous Names',
+    'companies_house_url': 'Companies House URL'
+};
+
 /**
  * Initialize the application
  */
@@ -66,6 +102,28 @@ function initializeEventHandlers() {
     $('#exportExcelBtn').on('click', function() {
         exportResults('excel');
     });
+
+    // Column selector buttons
+    $('#selectAllCols').on('click', function() {
+        $('.column-checkbox').prop('checked', true);
+    });
+
+    $('#deselectAllCols').on('click', function() {
+        $('.column-checkbox').prop('checked', false);
+        // Keep essential columns checked
+        $('#col_company_number, #col_company_name').prop('checked', true);
+    });
+}
+
+/**
+ * Get selected columns
+ */
+function getSelectedColumns() {
+    const selected = [];
+    $('.column-checkbox:checked').each(function() {
+        selected.push($(this).data('column'));
+    });
+    return selected.length > 0 ? selected : ['company_number', 'company_name']; // Minimum columns
 }
 
 /**
@@ -140,24 +198,43 @@ function displayResults(data) {
     // Destroy existing DataTable
     if (dataTable) {
         dataTable.destroy();
+        $('#companiesTable').empty();
     }
 
-    // Clear existing data
-    $('#companiesTable tbody').empty();
+    // Get selected columns
+    const selectedColumns = getSelectedColumns();
 
-    // Prepare table data
-    const tableData = data.companies.map(company => [
-        company.company_number,
-        company.company_name,
-        formatStatus(company.company_status),
-        company.company_type || '',
-        company.date_of_creation || '',
-        company.sic_codes || '',
-        company.sic_descriptions || '',
-        company.full_address || '',
-        company.postal_code || '',
-        company.region || ''
-    ]);
+    // Build table header
+    let headerHtml = '<thead><tr>';
+    selectedColumns.forEach(col => {
+        headerHtml += `<th>${ALL_COLUMNS[col] || col}</th>`;
+    });
+    headerHtml += '</tr></thead><tbody></tbody>';
+    $('#companiesTable').html(headerHtml);
+
+    // Prepare table data based on selected columns
+    const tableData = data.companies.map(company => {
+        return selectedColumns.map(col => {
+            let value = company[col] || '';
+            // Special formatting for status
+            if (col === 'company_status') {
+                return formatStatus(value);
+            }
+            // Make URL clickable
+            if (col === 'companies_house_url' && value) {
+                return `<a href="${value}" target="_blank">View</a>`;
+            }
+            return value;
+        });
+    });
+
+    // Find columns that need truncation (long text fields)
+    const truncateCols = [];
+    selectedColumns.forEach((col, idx) => {
+        if (['full_address', 'sic_descriptions', 'previous_names'].includes(col)) {
+            truncateCols.push(idx);
+        }
+    });
 
     // Initialize DataTable
     dataTable = $('#companiesTable').DataTable({
@@ -167,7 +244,7 @@ function displayResults(data) {
         order: [[1, 'asc']],
         scrollX: true,
         columnDefs: [
-            { targets: [6, 7], className: 'truncate-text' }
+            { targets: truncateCols, className: 'truncate-text' }
         ],
         language: {
             search: "Filter results:",
@@ -215,6 +292,7 @@ async function exportResults(format) {
 
     const endpoint = format === 'csv' ? '/api/export/csv' : '/api/export/excel';
     const filename = format === 'csv' ? 'uk_companies.csv' : 'uk_companies.xlsx';
+    const selectedColumns = getSelectedColumns();
 
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -222,7 +300,14 @@ async function exportResults(format) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ companies: currentResults })
+            body: JSON.stringify({
+                companies: currentResults,
+                columns: selectedColumns,
+                column_names: selectedColumns.reduce((acc, col) => {
+                    acc[col] = ALL_COLUMNS[col] || col;
+                    return acc;
+                }, {})
+            })
         });
 
         if (!response.ok) {
