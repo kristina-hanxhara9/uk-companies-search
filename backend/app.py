@@ -67,9 +67,9 @@ class ExportRequest(BaseModel):
 search_results_cache = {}
 
 
-@app.get("/")
-async def root():
-    """Root endpoint"""
+@app.get("/api")
+async def api_root():
+    """API info endpoint"""
     return {"message": "UK Companies House Search API", "version": "1.0.0"}
 
 
@@ -210,17 +210,20 @@ async def health_check():
 
 
 # Serve static frontend files in production
-# This must be AFTER all API routes
 frontend_path = os.path.join(os.path.dirname(__file__), '..', 'frontend')
 if os.path.exists(frontend_path):
     # Serve static files (CSS, JS)
     app.mount("/css", StaticFiles(directory=os.path.join(frontend_path, "css")), name="css")
     app.mount("/js", StaticFiles(directory=os.path.join(frontend_path, "js")), name="js")
 
-    # Serve index.html for root path
-    @app.get("/")
-    async def serve_frontend():
-        return FileResponse(os.path.join(frontend_path, "index.html"))
+# Serve index.html for root path - must be defined at module level
+@app.get("/", include_in_schema=False)
+async def serve_frontend():
+    """Serve the frontend HTML"""
+    index_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'index.html')
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"message": "UK Companies House Search API", "version": "1.0.0"}
 
 
 if __name__ == "__main__":
