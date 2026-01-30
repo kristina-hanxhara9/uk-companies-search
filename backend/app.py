@@ -210,20 +210,34 @@ async def health_check():
 
 
 # Serve static frontend files in production
-frontend_path = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+# Get the absolute path to frontend folder (works both locally and on Railway)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+frontend_path = os.path.join(BASE_DIR, 'frontend')
+
+logger.info(f"Looking for frontend at: {frontend_path}")
+logger.info(f"Frontend exists: {os.path.exists(frontend_path)}")
+
 if os.path.exists(frontend_path):
     # Serve static files (CSS, JS)
-    app.mount("/css", StaticFiles(directory=os.path.join(frontend_path, "css")), name="css")
-    app.mount("/js", StaticFiles(directory=os.path.join(frontend_path, "js")), name="js")
+    css_path = os.path.join(frontend_path, "css")
+    js_path = os.path.join(frontend_path, "js")
 
-# Serve index.html for root path - must be defined at module level
+    if os.path.exists(css_path):
+        app.mount("/css", StaticFiles(directory=css_path), name="css")
+    if os.path.exists(js_path):
+        app.mount("/js", StaticFiles(directory=js_path), name="js")
+
+
+# Serve index.html for root path
 @app.get("/", include_in_schema=False)
 async def serve_frontend():
     """Serve the frontend HTML"""
-    index_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'index.html')
+    index_path = os.path.join(BASE_DIR, 'frontend', 'index.html')
+    logger.info(f"Serving frontend from: {index_path}, exists: {os.path.exists(index_path)}")
     if os.path.exists(index_path):
         return FileResponse(index_path)
-    return {"message": "UK Companies House Search API", "version": "1.0.0"}
+    # Fallback: return API info
+    return {"message": "UK Companies House Search API", "version": "1.0.0", "frontend_path": index_path}
 
 
 if __name__ == "__main__":
