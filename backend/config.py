@@ -13,4 +13,4 @@ RATE_LIMIT_DELAY = 0.2  # seconds between requests
 RATE_LIMIT_BACKOFF = 60  # seconds to wait on 429
 
 # CORS
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080").split(",")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080,http://localhost:9000,http://127.0.0.1:9000").split(",")

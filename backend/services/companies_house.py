@@ -730,6 +730,63 @@ class CompaniesHouseAPI:
 
         return all_companies
 
+    def search_by_company_name(
+        self,
+        search_term: str,
+        active_only: bool = True
+    ) -> List[Dict[str, Any]]:
+        """
+        Search companies by company name.
+        Returns all companies matching the search term.
+        """
+        companies = []
+        start_index = 0
+
+        logger.info(f"Searching for company name: {search_term}")
+
+        while True:
+            params = {
+                'q': search_term,
+                'size': ITEMS_PER_PAGE,
+                'start_index': start_index
+            }
+
+            if active_only:
+                params['company_status'] = 'active'
+
+            try:
+                response = self._make_request('/advanced-search/companies', params)
+
+                if response is None:
+                    break
+
+                items = response.get('items', [])
+                if not items:
+                    break
+
+                # Process each company
+                for item in items:
+                    company = self._process_company(item)
+                    companies.append(company)
+
+                # Check if we've reached the end
+                hits = response.get('hits', 0)
+                start_index += len(items)
+
+                logger.info(f"Search '{search_term}': fetched {start_index}/{hits} companies")
+
+                if start_index >= hits or start_index >= 10000:  # API limit
+                    break
+
+                time.sleep(RATE_LIMIT_DELAY)
+
+            except Exception as e:
+                logger.error(f"Error searching company name '{search_term}': {e}")
+                break
+
+        logger.info(f"Search '{search_term}': Found {len(companies)} total companies")
+        return companies
+
     def _search_single_sic(
         self,
         sic_code: str,

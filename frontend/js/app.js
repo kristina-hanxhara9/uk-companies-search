@@ -84,17 +84,20 @@ function parseKeywords(input) {
  * Perform the search
  */
 async function performSearch() {
-    const sicCodes = $('#sicCodes').val();
+    const sicCodes = $('#sicCodes').val() || [];
+    const includeKeywords = parseKeywords($('#includeKeywords').val());
+    const excludeKeywords = parseKeywords($('#excludeKeywords').val());
 
-    if (!sicCodes || sicCodes.length === 0) {
-        alert('Please select at least one SIC code');
+    // Validate: need either SIC codes or include keywords
+    if (sicCodes.length === 0 && includeKeywords.length === 0) {
+        alert('Please select at least one SIC code OR enter at least one include keyword');
         return;
     }
 
     const searchData = {
-        sic_codes: sicCodes,
-        include_keywords: parseKeywords($('#includeKeywords').val()),
-        exclude_keywords: parseKeywords($('#excludeKeywords').val()),
+        sic_codes: sicCodes.length > 0 ? sicCodes : null,
+        include_keywords: includeKeywords.length > 0 ? includeKeywords : null,
+        exclude_keywords: excludeKeywords.length > 0 ? excludeKeywords : null,
         active_only: $('#activeOnly').is(':checked'),
         exclude_northern_ireland: $('#excludeNI').is(':checked')
     };

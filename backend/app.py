@@ -49,7 +49,7 @@ api_client = CompaniesHouseAPI()
 
 # Request/Response models
 class SearchRequest(BaseModel):
-    sic_codes: List[str]
+    sic_codes: Optional[List[str]] = None  # Now optional!
     include_keywords: Optional[List[str]] = None
     exclude_keywords: Optional[List[str]] = None
     active_only: bool = True
@@ -79,29 +79,66 @@ async def get_sic_codes():
 @app.post("/api/search")
 async def search_companies(request: SearchRequest):
     """
-    Search companies by SIC codes with optional filters.
+    Search companies by SIC codes and/or keywords.
+    - If SIC codes provided: search by SIC codes, then filter by keywords
+    - If only keywords provided: search directly by company name
     """
-    logger.info(f"Search request: {request.sic_codes}")
+    logger.info(f"Search request - SIC codes: {request.sic_codes}, Include keywords: {request.include_keywords}")
 
-    if not request.sic_codes:
-        raise HTTPException(status_code=400, detail="At least one SIC code is required")
+    # Validate: need either SIC codes or include keywords
+    has_sic_codes = request.sic_codes and len(request.sic_codes) > 0
+    has_include_keywords = request.include_keywords and len(request.include_keywords) > 0
+
+    if not has_sic_codes and not has_include_keywords:
+        raise HTTPException(
+            status_code=400,
+            detail="Please provide at least one SIC code OR one include keyword"
+        )
 
     try:
-        # Search by SIC codes
-        companies = api_client.search_by_sic_codes(
-            sic_codes=request.sic_codes,
-            active_only=request.active_only
-        )
-        logger.info(f"Found {len(companies)} companies from API")
+        companies = []
+
+        if has_sic_codes:
+            # Search by SIC codes
+            companies = api_client.search_by_sic_codes(
+                sic_codes=request.sic_codes,
+                active_only=request.active_only
+            )
+            logger.info(f"Found {len(companies)} companies from SIC code search")
+
+            # If we have SIC codes AND include keywords, filter the results
+            if has_include_keywords:
+                companies = filter_by_include_keywords(companies, request.include_keywords)
+                logger.info(f"After include keyword filter: {len(companies)} companies")
+        else:
+            # No SIC codes - search by each keyword directly
+            all_companies = []
+            seen_company_numbers = set()
+
+            for keyword in request.include_keywords:
+                keyword_results = api_client.search_by_company_name(
+                    search_term=keyword,
+                    active_only=request.active_only
+                )
+                # Deduplicate across keywords
+                for company in keyword_results:
+                    company_num = company.get('company_number')
+                    if company_num and company_num not in seen_company_numbers:
+                        seen_company_numbers.add(company_num)
+                        all_companies.append(company)
+
+            companies = all_companies
+            logger.info(f"Found {len(companies)} companies from keyword search")
+
+            # Filter to only include companies with keyword in name
+            # (API returns broader matches, we want name matches only)
+            companies = filter_by_include_keywords(companies, request.include_keywords)
+            logger.info(f"After name filter: {len(companies)} companies")
 
         # Apply filters
         if request.exclude_northern_ireland:
             companies = filter_exclude_northern_ireland(companies)
             logger.info(f"After NI filter: {len(companies)} companies")
-
-        if request.include_keywords:
-            companies = filter_by_include_keywords(companies, request.include_keywords)
-            logger.info(f"After include filter: {len(companies)} companies")
 
         if request.exclude_keywords:
             companies = filter_by_exclude_keywords(companies, request.exclude_keywords)
