@@ -1,11 +1,12 @@
 """
 UK Companies House Search API - FastAPI Application
 """
+import os
 import logging
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -206,6 +207,20 @@ async def export_excel(request: ExportRequest):
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
+
+
+# Serve static frontend files in production
+# This must be AFTER all API routes
+frontend_path = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+if os.path.exists(frontend_path):
+    # Serve static files (CSS, JS)
+    app.mount("/css", StaticFiles(directory=os.path.join(frontend_path, "css")), name="css")
+    app.mount("/js", StaticFiles(directory=os.path.join(frontend_path, "js")), name="js")
+
+    # Serve index.html for root path
+    @app.get("/")
+    async def serve_frontend():
+        return FileResponse(os.path.join(frontend_path, "index.html"))
 
 
 if __name__ == "__main__":

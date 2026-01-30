@@ -2,8 +2,10 @@
  * UK Companies House Search - Main Application
  */
 
-// API Base URL - change this for production
-const API_BASE_URL = 'http://localhost:8000';
+// API Base URL - automatically detects local vs production
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000'
+    : window.location.origin;  // Uses same domain in production
 
 // Store search results for export
 let currentResults = [];
