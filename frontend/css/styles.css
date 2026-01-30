@@ -1,64 +1,288 @@
-/* UK Companies House Search - Custom Styles */
+/* UK Companies House Search - Modern UI Styles */
 
+/* ===== CSS Variables ===== */
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --card-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    --card-shadow-hover: 0 20px 60px rgba(0,0,0,0.12);
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+}
+
+/* ===== Base Styles ===== */
 body {
-    background-color: #f8f9fa;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
+    min-height: 100vh;
+}
+
+/* ===== Navbar ===== */
+.navbar {
+    background: var(--primary-gradient) !important;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    padding: 1rem 0;
 }
 
 .navbar-brand {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
+.navbar-brand svg {
+    margin-right: 10px;
+}
+
+/* ===== Cards ===== */
 .card {
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: none;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    box-shadow: var(--card-shadow-hover);
 }
 
 .card-header {
-    font-weight: 500;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px 20px 0 0 !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1.25rem 1.5rem;
+    font-weight: 600;
 }
 
-/* Form Styles */
+.card-header h5 {
+    color: #2d3748;
+    font-weight: 700;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* ===== Form Styles ===== */
 .form-label {
-    font-weight: 500;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
 }
 
-/* Select2 customizations */
+.form-control, .form-select {
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+    background-color: #fff;
+}
+
+.form-control::placeholder {
+    color: #a0aec0;
+}
+
+/* ===== Select2 Customizations ===== */
 .select2-container--bootstrap-5 .select2-selection {
-    min-height: 38px;
+    min-height: 48px;
+    border-radius: 12px !important;
+    border: 2px solid #e2e8f0 !important;
+    padding: 0.25rem 0.5rem;
+}
+
+.select2-container--bootstrap-5.select2-container--focus .select2-selection {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15) !important;
 }
 
 .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+    background: var(--primary-gradient);
+    border: none;
     color: white;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-weight: 500;
 }
 
 .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
     color: white;
+    opacity: 0.8;
 }
 
-/* Table Styles */
+.select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
+    opacity: 1;
+}
+
+/* ===== Checkboxes ===== */
+.form-check-input {
+    width: 1.2em;
+    height: 1.2em;
+    border-radius: 4px;
+    border: 2px solid #cbd5e0;
+    transition: all 0.2s ease;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    border-color: var(--primary-color);
+}
+
+.form-check-label {
+    color: #4a5568;
+}
+
+/* ===== Search Button ===== */
+#searchBtn {
+    background: var(--primary-gradient);
+    border: none;
+    padding: 1rem 3rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border-radius: 50px;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+#searchBtn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5);
+}
+
+#searchBtn:active:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+#searchBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+#searchBtn .spinner-border {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.5rem;
+}
+
+/* ===== Export Buttons ===== */
+#exportCsvBtn {
+    background: var(--success-gradient);
+    border: none;
+    border-radius: 12px;
+    padding: 0.6rem 1.25rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+    transition: all 0.3s ease;
+}
+
+#exportCsvBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+}
+
+#exportExcelBtn {
+    background: var(--primary-gradient);
+    border: none;
+    border-radius: 12px;
+    padding: 0.6rem 1.25rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+#exportExcelBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* ===== Result Count Badge ===== */
+#resultCount {
+    background: var(--success-gradient);
+    font-size: 1.1rem;
+    padding: 0.5em 1.2em;
+    border-radius: 50px;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+}
+
+/* ===== Column Selector Accordion ===== */
+.column-accordion .accordion-button {
+    background: transparent;
+    color: #4a5568;
+    font-weight: 600;
+    padding: 0.75rem 0;
+    box-shadow: none !important;
+}
+
+.column-accordion .accordion-button:not(.collapsed) {
+    background: transparent;
+    color: var(--primary-color);
+}
+
+.column-accordion .accordion-button::after {
+    background-size: 1rem;
+}
+
+.column-accordion .accordion-body {
+    padding: 1rem 0;
+}
+
+.column-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #718096;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+/* ===== Table Styles ===== */
 #companiesTable {
     font-size: 0.875rem;
 }
 
-#companiesTable th {
-    background-color: #f8f9fa;
+#companiesTable thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
     font-weight: 600;
     white-space: nowrap;
+    padding: 1rem 0.75rem;
+    border: none;
 }
 
-#companiesTable td {
+#companiesTable tbody td {
     vertical-align: middle;
+    padding: 0.875rem 0.75rem;
+    border-color: #e2e8f0;
 }
 
-/* Loading Overlay */
+#companiesTable tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.05);
+}
+
+/* ===== Loading Overlay ===== */
 #loadingOverlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(255, 255, 255, 0.9);
+    background: var(--primary-gradient);
     z-index: 9999;
     display: flex;
     justify-content: center;
@@ -67,30 +291,153 @@ body {
 
 .loading-content {
     text-align: center;
+    color: white;
 }
 
-/* Badge Styles */
+.loading-content .spinner-border {
+    width: 4rem;
+    height: 4rem;
+    border-width: 4px;
+    color: white !important;
+}
+
+.loading-content p {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+}
+
+.loading-content small {
+    color: rgba(255,255,255,0.8) !important;
+}
+
+/* ===== Status Colors ===== */
+.status-active {
+    color: #10b981;
+    font-weight: 600;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.status-dissolved {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.status-liquidation {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+/* ===== Truncate Text ===== */
+.truncate-text {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.truncate-text:hover {
+    overflow: visible;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* ===== Footer ===== */
+footer {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* ===== Badge Styles ===== */
 .badge {
-    font-size: 1rem;
-    padding: 0.5em 0.75em;
+    font-weight: 600;
+    padding: 0.4em 0.8em;
+    border-radius: 6px;
 }
 
-/* Button Styles */
-.btn-lg {
-    padding: 0.75rem 2rem;
+.badge.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
 }
 
-/* Export buttons */
-#exportCsvBtn, #exportExcelBtn {
-    min-width: 130px;
+.badge.bg-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    color: white !important;
 }
 
-/* Results Section */
+/* ===== Button Utilities ===== */
+.btn-sm {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.4rem 1rem;
+}
+
+.btn-outline-secondary {
+    border: 2px solid #cbd5e0;
+    color: #4a5568;
+}
+
+.btn-outline-secondary:hover {
+    background: #4a5568;
+    border-color: #4a5568;
+    color: white;
+}
+
+/* ===== Results Section ===== */
 #resultsSection {
     margin-bottom: 2rem;
 }
 
-/* Responsive Adjustments */
+#resultsSection .card-header {
+    padding: 1rem 1.5rem;
+}
+
+/* ===== DataTables Customization ===== */
+.dataTables_wrapper .dataTables_length select {
+    min-width: 75px;
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    min-width: 200px;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    padding: 0.4rem 0.75rem;
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    outline: none;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 8px !important;
+    margin: 0 2px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: var(--primary-gradient) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #667eea !important;
+    border: none !important;
+    color: white !important;
+}
+
+/* ===== Responsive Adjustments ===== */
 @media (max-width: 768px) {
     .card-header .d-flex {
         flex-direction: column;
@@ -101,42 +448,32 @@ body {
         width: 100%;
         margin: 0.25rem 0;
     }
+
+    #searchBtn {
+        width: 100%;
+        padding: 1rem;
+    }
+
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
 }
 
-/* DataTables Customization */
-.dataTables_wrapper .dataTables_length select {
-    min-width: 75px;
+/* ===== Animations ===== */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
-.dataTables_wrapper .dataTables_filter input {
-    min-width: 200px;
+.loading-content .spinner-border {
+    animation: spin 1s linear infinite;
 }
 
-/* Status Colors */
-.status-active {
-    color: #198754;
-    font-weight: 500;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.status-dissolved {
-    color: #dc3545;
-}
-
-.status-liquidation {
-    color: #ffc107;
-}
-
-/* Truncate long text in table cells */
-.truncate-text {
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* Tooltip for truncated text */
-.truncate-text:hover {
-    overflow: visible;
-    white-space: normal;
-    word-break: break-word;
+#resultsSection {
+    animation: fadeIn 0.5s ease;
 }

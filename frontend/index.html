@@ -15,10 +15,14 @@
     <link href="css/styles.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <strong>UK Companies House Search</strong>
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-building" viewBox="0 0 16 16">
+                    <path d="M4 2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zM4 5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zM7.5 5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm2.5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zM4.5 8a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm2.5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5z"/>
+                    <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1zm11 0H3v14h3v-2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V15h3z"/>
+                </svg>
+                UK Companies Search
             </a>
         </div>
     </nav>
@@ -84,13 +88,24 @@
                         </div>
                     </div>
 
-                    <!-- Column Selector -->
-                    <div class="row mt-3">
+                    <!-- Column Selector (Collapsible) -->
+                    <div class="row mt-4">
                         <div class="col-12">
-                            <label class="form-label"><strong>Columns to Display & Export:</strong></label>
+                            <div class="accordion column-accordion" id="columnAccordion">
+                                <div class="accordion-item border-0 bg-transparent">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed px-0" type="button" data-bs-toggle="collapse" data-bs-target="#columnSelector" aria-expanded="false">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-columns-gap me-2" viewBox="0 0 16 16">
+                                                <path d="M6 1v3H1V1zM1 0a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1zm14 12v3h-5v-3zm-5-1a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1zM6 8v7H1V8zM1 7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm14-6v7h-5V1zm-5-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1z"/>
+                                            </svg>
+                                            Columns to Display & Export
+                                        </button>
+                                    </h2>
+                                    <div id="columnSelector" class="accordion-collapse collapse" data-bs-parent="#columnAccordion">
+                                        <div class="accordion-body px-0 pt-3">
                             <div class="row">
                                 <div class="col-md-3">
-                                    <p class="text-muted mb-1"><small>Basic Info</small></p>
+                                    <p class="column-section-title">Basic Info</p>
                                     <div class="form-check form-check-sm">
                                         <input class="form-check-input column-checkbox" type="checkbox" id="col_company_number" data-column="company_number" checked>
                                         <label class="form-check-label small" for="col_company_number">Company Number</label>
@@ -121,7 +136,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <p class="text-muted mb-1"><small>Address</small></p>
+                                    <p class="column-section-title">Address</p>
                                     <div class="form-check form-check-sm">
                                         <input class="form-check-input column-checkbox" type="checkbox" id="col_full_address" data-column="full_address" checked>
                                         <label class="form-check-label small" for="col_full_address">Full Address</label>
@@ -152,7 +167,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <p class="text-muted mb-1"><small>SIC Codes & Accounts</small></p>
+                                    <p class="column-section-title">SIC Codes & Accounts</p>
                                     <div class="form-check form-check-sm">
                                         <input class="form-check-input column-checkbox" type="checkbox" id="col_sic_codes" data-column="sic_codes" checked>
                                         <label class="form-check-label small" for="col_sic_codes">SIC Codes</label>
@@ -179,7 +194,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <p class="text-muted mb-1"><small>Flags & Links</small></p>
+                                    <p class="column-section-title">Flags & Links</p>
                                     <div class="form-check form-check-sm">
                                         <input class="form-check-input column-checkbox" type="checkbox" id="col_has_charges" data-column="has_charges">
                                         <label class="form-check-label small" for="col_has_charges">Has Charges</label>
@@ -205,7 +220,7 @@
                             <!-- Directors & Owners section -->
                             <div class="row mt-2" id="peopleColumnsSection">
                                 <div class="col-md-6">
-                                    <p class="text-muted mb-1"><small>Directors <span class="badge bg-info text-dark">Requires "Include Directors & Owners"</span></small></p>
+                                    <p class="column-section-title">Directors <span class="badge bg-info">Requires checkbox above</span></p>
                                     <div class="form-check form-check-sm">
                                         <input class="form-check-input column-checkbox people-column" type="checkbox" id="col_directors_count" data-column="directors_count">
                                         <label class="form-check-label small" for="col_directors_count">Directors Count</label>
@@ -216,7 +231,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <p class="text-muted mb-1"><small>Owners (PSC) <span class="badge bg-info text-dark">Requires "Include Directors & Owners"</span></small></p>
+                                    <p class="column-section-title">Owners (PSC) <span class="badge bg-info">Requires checkbox above</span></p>
                                     <div class="form-check form-check-sm">
                                         <input class="form-check-input column-checkbox people-column" type="checkbox" id="col_psc_count" data-column="psc_count">
                                         <label class="form-check-label small" for="col_psc_count">Owners Count</label>
@@ -231,19 +246,26 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="row mt-2">
+                            <div class="row mt-3">
                                 <div class="col-12">
                                     <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllCols">Select All</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllCols">Deselect All</button>
                                 </div>
                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-12">
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
                             <button type="submit" class="btn btn-primary btn-lg" id="searchBtn">
                                 <span class="spinner-border spinner-border-sm d-none" id="searchSpinner"></span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search me-2" viewBox="0 0 16 16" id="searchIcon">
+                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                                </svg>
                                 <span id="searchBtnText">Search Companies</span>
                             </button>
                         </div>
