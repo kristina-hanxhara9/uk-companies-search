@@ -132,11 +132,8 @@ async def search_companies(request: SearchRequest):
 
             companies = all_companies
             logger.info(f"Found {len(companies)} companies from keyword search")
-
-            # Filter to only include companies with keyword in name
-            # (API returns broader matches, we want name matches only)
-            companies = filter_by_include_keywords(companies, request.include_keywords)
-            logger.info(f"After name filter: {len(companies)} companies")
+            # Note: company_name_includes API parameter already filters by name,
+            # so no additional keyword filtering needed here
 
         # Apply filters
         if request.exclude_northern_ireland:

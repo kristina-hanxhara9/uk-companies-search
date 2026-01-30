@@ -56,12 +56,16 @@ def is_northern_ireland(company: Dict[str, Any]) -> bool:
     if company_number.startswith('NI') or company_number.startswith('R0'):
         return True
 
-    # Also check address
-    address = company.get('registered_office_address', {})
-    if isinstance(address, dict):
-        address_str = ' '.join(str(v) for v in address.values() if v).upper()
-    else:
-        address_str = str(address).upper()
+    # Check full_address field (processed company data)
+    full_address = company.get('full_address', '').upper()
+
+    # Also check individual address fields
+    locality = company.get('locality', '').upper()
+    region = company.get('region', '').upper()
+    country = company.get('country', '').upper()
+
+    # Combine all address parts
+    address_str = f"{full_address} {locality} {region} {country}"
 
     ni_indicators = ['NORTHERN IRELAND', 'BELFAST', 'ANTRIM', 'ARMAGH', 'DERRY',
                      'DOWN', 'FERMANAGH', 'TYRONE', 'LISBURN', 'NEWRY']
