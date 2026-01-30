@@ -736,17 +736,19 @@ class CompaniesHouseAPI:
         active_only: bool = True
     ) -> List[Dict[str, Any]]:
         """
-        Search companies by company name.
+        Search companies by company name using the advanced search.
+        Uses company_name_includes parameter for proper keyword matching.
         Returns all companies matching the search term.
         """
         companies = []
         start_index = 0
 
-        logger.info(f"Searching for company name: {search_term}")
+        logger.info(f"Searching for company name containing: {search_term}")
 
         while True:
+            # Use company_name_includes for proper keyword search
             params = {
-                'q': search_term,
+                'company_name_includes': search_term,
                 'size': ITEMS_PER_PAGE,
                 'start_index': start_index
             }
