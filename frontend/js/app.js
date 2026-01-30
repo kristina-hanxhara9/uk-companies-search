@@ -46,7 +46,13 @@ const ALL_COLUMNS = {
     'registered_office_in_dispute': 'Address Disputed',
     'undeliverable_address': 'Undeliverable Address',
     'previous_names': 'Previous Names',
-    'companies_house_url': 'Companies House URL'
+    'companies_house_url': 'Companies House URL',
+    // Directors & Owners columns
+    'directors_count': 'Directors Count',
+    'directors_names': 'Directors Names',
+    'psc_count': 'Owners Count',
+    'psc_names': 'Owners Names',
+    'psc_control': 'Control Type'
 };
 
 /**
@@ -108,6 +114,10 @@ function initializeEventHandlers() {
     // Column selector buttons
     $('#selectAllCols').on('click', function() {
         $('.column-checkbox').prop('checked', true);
+        // Only check people columns if includePeople is checked
+        if (!$('#includePeople').is(':checked')) {
+            $('.people-column').prop('checked', false);
+        }
     });
 
     $('#deselectAllCols').on('click', function() {
@@ -115,6 +125,22 @@ function initializeEventHandlers() {
         // Keep essential columns checked
         $('#col_company_number, #col_company_name').prop('checked', true);
     });
+
+    // Toggle people columns based on includePeople checkbox
+    $('#includePeople').on('change', function() {
+        const isChecked = $(this).is(':checked');
+        $('.people-column').prop('disabled', !isChecked);
+        if (isChecked) {
+            // Auto-select the people columns when enabled
+            $('.people-column').prop('checked', true);
+        } else {
+            // Uncheck and disable when turned off
+            $('.people-column').prop('checked', false);
+        }
+    });
+
+    // Initialize people columns state
+    $('.people-column').prop('disabled', !$('#includePeople').is(':checked'));
 }
 
 /**
@@ -154,13 +180,23 @@ async function performSearch() {
         return;
     }
 
+    const includePeople = $('#includePeople').is(':checked');
+
     const searchData = {
         sic_codes: sicCodes.length > 0 ? sicCodes : null,
         include_keywords: includeKeywords.length > 0 ? includeKeywords : null,
         exclude_keywords: excludeKeywords.length > 0 ? excludeKeywords : null,
         active_only: $('#activeOnly').is(':checked'),
-        exclude_northern_ireland: $('#excludeNI').is(':checked')
+        exclude_northern_ireland: $('#excludeNI').is(':checked'),
+        include_people: includePeople
     };
+
+    // Update loading text based on whether we're fetching people data
+    if (includePeople) {
+        $('#loadingText').text('Searching and fetching directors/owners data...');
+    } else {
+        $('#loadingText').text('Searching Companies House API...');
+    }
 
     showLoading();
 
@@ -233,7 +269,7 @@ function displayResults(data) {
     // Find columns that need truncation (long text fields)
     const truncateCols = [];
     selectedColumns.forEach((col, idx) => {
-        if (['full_address', 'sic_descriptions', 'previous_names'].includes(col)) {
+        if (['full_address', 'sic_descriptions', 'previous_names', 'directors_names', 'psc_names', 'psc_control'].includes(col)) {
             truncateCols.push(idx);
         }
     });

@@ -55,6 +55,7 @@ class SearchRequest(BaseModel):
     exclude_keywords: Optional[List[str]] = None
     active_only: bool = True
     exclude_northern_ireland: bool = True
+    include_people: bool = False  # Include directors & owners data (slower)
 
 
 class ExportRequest(BaseModel):
@@ -147,6 +148,12 @@ async def search_companies(request: SearchRequest):
         # Deduplicate
         companies = deduplicate_companies(companies)
         logger.info(f"Final count: {len(companies)} companies")
+
+        # Enrich with people data if requested
+        if request.include_people and companies:
+            logger.info(f"Enriching {len(companies)} companies with officers/PSC data...")
+            companies = api_client.enrich_with_people_data(companies)
+            logger.info("Enrichment complete")
 
         return {
             "count": len(companies),

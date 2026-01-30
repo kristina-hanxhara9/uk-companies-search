@@ -964,6 +964,143 @@ class CompaniesHouseAPI:
         ]
         return ', '.join(p for p in parts if p)
 
+    def get_officers(self, company_number: str) -> Dict[str, Any]:
+        """
+        Fetch officers/directors for a company.
+        Returns summary with count and names of active directors.
+        """
+        try:
+            response = self._make_request(f'/company/{company_number}/officers')
+
+            if response is None:
+                return {'directors_count': 0, 'directors_names': ''}
+
+            items = response.get('items', [])
+            active_count = response.get('active_count', 0)
+
+            # Get names of active directors only
+            active_directors = []
+            for officer in items:
+                # Skip resigned officers
+                if officer.get('resigned_on'):
+                    continue
+                # Only include directors (not secretaries, etc.)
+                role = officer.get('officer_role', '').lower()
+                if 'director' in role:
+                    name = officer.get('name', '')
+                    if name:
+                        active_directors.append(name)
+
+            return {
+                'directors_count': len(active_directors),
+                'directors_names': '; '.join(active_directors)
+            }
+
+        except Exception as e:
+            logger.error(f"Error fetching officers for {company_number}: {e}")
+            return {'directors_count': 0, 'directors_names': ''}
+
+    def get_psc(self, company_number: str) -> Dict[str, Any]:
+        """
+        Fetch Persons with Significant Control (owners) for a company.
+        Returns summary with count, names, and control types.
+        """
+        try:
+            response = self._make_request(f'/company/{company_number}/persons-with-significant-control')
+
+            if response is None:
+                return {'psc_count': 0, 'psc_names': '', 'psc_control': ''}
+
+            items = response.get('items', [])
+
+            psc_names = []
+            control_types = set()
+
+            for psc in items:
+                # Skip ceased PSCs
+                if psc.get('ceased'):
+                    continue
+
+                # Get name (works for individuals and corporate entities)
+                name = psc.get('name', '')
+                if not name:
+                    # Try name_elements for individuals
+                    name_elements = psc.get('name_elements', {})
+                    if name_elements:
+                        parts = [
+                            name_elements.get('forename', ''),
+                            name_elements.get('surname', '')
+                        ]
+                        name = ' '.join(p for p in parts if p)
+
+                if name:
+                    psc_names.append(name)
+
+                # Get nature of control
+                natures = psc.get('natures_of_control', [])
+                for nature in natures:
+                    # Simplify the control descriptions
+                    if 'ownership-of-shares-75-to-100' in nature:
+                        control_types.add('75-100% shares')
+                    elif 'ownership-of-shares-50-to-75' in nature:
+                        control_types.add('50-75% shares')
+                    elif 'ownership-of-shares-25-to-50' in nature:
+                        control_types.add('25-50% shares')
+                    elif 'voting-rights' in nature:
+                        control_types.add('Voting rights')
+                    elif 'right-to-appoint-and-remove-directors' in nature:
+                        control_types.add('Appoint directors')
+                    elif 'significant-influence-or-control' in nature:
+                        control_types.add('Significant influence')
+
+            return {
+                'psc_count': len(psc_names),
+                'psc_names': '; '.join(psc_names),
+                'psc_control': '; '.join(sorted(control_types))
+            }
+
+        except Exception as e:
+            logger.error(f"Error fetching PSC for {company_number}: {e}")
+            return {'psc_count': 0, 'psc_names': '', 'psc_control': ''}
+
+    def enrich_with_people_data(self, companies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Enrich company data with officers and PSC information.
+        This makes additional API calls for each company.
+        """
+        enriched = []
+        total = len(companies)
+
+        for i, company in enumerate(companies):
+            company_number = company.get('company_number')
+
+            if company_number:
+                logger.info(f"Enriching company {i+1}/{total}: {company_number}")
+
+                # Get officers data
+                officers_data = self.get_officers(company_number)
+                company.update(officers_data)
+
+                # Get PSC data
+                psc_data = self.get_psc(company_number)
+                company.update(psc_data)
+
+                # Rate limit delay
+                time.sleep(RATE_LIMIT_DELAY)
+            else:
+                # No company number, add empty fields
+                company.update({
+                    'directors_count': 0,
+                    'directors_names': '',
+                    'psc_count': 0,
+                    'psc_names': '',
+                    'psc_control': ''
+                })
+
+            enriched.append(company)
+
+        return enriched
+
 
 def get_all_sic_codes() -> List[Dict[str, str]]:
     """Get all SIC codes as a list of dicts for the frontend."""
