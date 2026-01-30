@@ -37,10 +37,19 @@
                 <form id="searchForm">
                     <div class="row">
                         <div class="col-md-12 mb-3">
-                            <label for="sicCodes" class="form-label">SIC Codes</label>
+                            <label for="sicCodes" class="form-label">
+                                SIC Codes
+                                <span class="badge bg-secondary ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Standard Industrial Classification - 5-digit codes that categorise businesses by their primary activity (e.g., 45320 = Retail of motor vehicle parts)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
+                                    </svg>
+                                    What's this?
+                                </span>
+                            </label>
                             <select id="sicCodes" class="form-select" multiple="multiple" style="width: 100%;">
                             </select>
-                            <small class="text-muted">Optional: Select SIC codes to filter by industry</small>
+                            <small class="text-muted">Optional: Select SIC codes to filter by industry. <strong>SIC (Standard Industrial Classification)</strong> codes are 5-digit numbers used to classify UK businesses by their main activity.</small>
                         </div>
                     </div>
 

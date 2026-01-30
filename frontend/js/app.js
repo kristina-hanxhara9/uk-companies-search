@@ -61,7 +61,18 @@ const ALL_COLUMNS = {
 $(document).ready(function() {
     initializeSicCodeSelect();
     initializeEventHandlers();
+    initializeTooltips();
 });
+
+/**
+ * Initialize Bootstrap tooltips
+ */
+function initializeTooltips() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (el) {
+        return new bootstrap.Tooltip(el);
+    });
+}
 
 /**
  * Initialize Select2 for SIC codes dropdown
