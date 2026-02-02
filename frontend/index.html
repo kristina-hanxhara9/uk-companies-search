@@ -96,6 +96,39 @@
                         </div>
                     </div>
 
+                    <!-- AI Classification Section -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card bg-light border-0">
+                                <div class="card-body py-3">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="classifyWithAI">
+                                                <label class="form-check-label" for="classifyWithAI">
+                                                    <strong>Classify with AI</strong>
+                                                    <span class="badge bg-info text-white ms-1">New</span>
+                                                </label>
+                                                <br><small class="text-muted">Categorise into Shop Type & Channel</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8" id="channelDefinitionsSection" style="display: none;">
+                                            <label for="channelDefinitionsFile" class="form-label small mb-1">
+                                                Channel Definitions
+                                                <span id="channelFileStatus" class="badge bg-secondary ms-1">Not loaded</span>
+                                            </label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="file" class="form-control" id="channelDefinitionsFile" accept=".txt,.csv,.json">
+                                                <button type="button" class="btn btn-outline-secondary" id="clearChannelDefs">Clear</button>
+                                            </div>
+                                            <small class="text-muted">Upload your channel classification rules (txt/csv/json)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Column Selector (Collapsible) -->
                     <div class="row mt-4">
                         <div class="col-12">
@@ -251,6 +284,30 @@
                                     <div class="form-check form-check-sm">
                                         <input class="form-check-input column-checkbox people-column" type="checkbox" id="col_psc_control" data-column="psc_control">
                                         <label class="form-check-label small" for="col_psc_control">Control Type</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- AI Classification columns -->
+                            <div class="row mt-2" id="aiColumnsSection" style="display: none;">
+                                <div class="col-md-12">
+                                    <p class="column-section-title">AI Classification <span class="badge bg-info">Requires "Classify with AI" checkbox</span></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-check-sm">
+                                        <input class="form-check-input column-checkbox ai-column" type="checkbox" id="col_shop_type" data-column="shop_type" checked>
+                                        <label class="form-check-label small" for="col_shop_type">Shop Type</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-check-sm">
+                                        <input class="form-check-input column-checkbox ai-column" type="checkbox" id="col_channel" data-column="channel" checked>
+                                        <label class="form-check-label small" for="col_channel">Channel</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-check-sm">
+                                        <input class="form-check-input column-checkbox ai-column" type="checkbox" id="col_ai_confidence" data-column="ai_confidence">
+                                        <label class="form-check-label small" for="col_ai_confidence">AI Confidence</label>
                                     </div>
                                 </div>
                             </div>

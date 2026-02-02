@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from config import CORS_ORIGINS
 from services.companies_house import CompaniesHouseAPI, get_all_sic_codes
 from services.export_service import export_to_csv, export_to_excel
+from services.claude_classifier import classifier as claude_classifier
 from utils.filters import (
     filter_by_include_keywords,
     filter_by_exclude_keywords,
@@ -62,6 +63,11 @@ class ExportRequest(BaseModel):
     companies: List[dict]
     columns: Optional[List[str]] = None
     column_names: Optional[dict] = None
+
+
+class ClassifyRequest(BaseModel):
+    companies: List[dict]
+    channel_definitions: Optional[str] = None  # User's channel classification rules
 
 
 # Store results in memory for export (in production, use Redis or similar)
@@ -205,6 +211,52 @@ async def export_excel(request: ExportRequest):
             "Content-Disposition": "attachment; filename=uk_companies.xlsx"
         }
     )
+
+
+@app.post("/api/classify")
+async def classify_companies(request: ClassifyRequest):
+    """
+    Classify companies using AI into Shop Type and Channel.
+
+    - Shop Type: Chain / Independent / Buying Group
+    - Channel: Based on user-provided channel definitions
+    """
+    if not request.companies:
+        raise HTTPException(status_code=400, detail="No companies to classify")
+
+    if not claude_classifier.is_available():
+        raise HTTPException(
+            status_code=503,
+            detail="AI classification is not available. Please configure ANTHROPIC_API_KEY."
+        )
+
+    logger.info(f"Classifying {len(request.companies)} companies with AI")
+
+    try:
+        classified_companies = claude_classifier.classify_batch(
+            companies=request.companies,
+            channel_definitions=request.channel_definitions
+        )
+
+        logger.info(f"Classification complete for {len(classified_companies)} companies")
+
+        return {
+            "count": len(classified_companies),
+            "companies": classified_companies
+        }
+
+    except Exception as e:
+        logger.error(f"Classification error: {e}")
+        raise HTTPException(status_code=500, detail=f"Classification failed: {str(e)}")
+
+
+@app.get("/api/classify/status")
+async def classify_status():
+    """Check if AI classification is available"""
+    return {
+        "available": claude_classifier.is_available(),
+        "message": "AI classification is ready" if claude_classifier.is_available() else "ANTHROPIC_API_KEY not configured"
+    }
 
 
 @app.get("/health")
