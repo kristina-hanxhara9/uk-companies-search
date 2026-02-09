@@ -53,14 +53,7 @@ const ALL_COLUMNS = {
     'psc_count': 'Owners Count',
     'psc_names': 'Owners Names',
     'psc_control': 'Control Type',
-    // AI Classification columns
-    'shop_type': 'Shop Type',
-    'channel': 'Channel',
-    'ai_confidence': 'AI Confidence'
 };
-
-// Store channel definitions in memory (loaded from file)
-let channelDefinitions = localStorage.getItem('channelDefinitions') || '';
 
 /**
  * Initialize the application
@@ -160,48 +153,6 @@ function initializeEventHandlers() {
     // Initialize people columns state
     $('.people-column').prop('disabled', !$('#includePeople').is(':checked'));
 
-    // Toggle AI classification options
-    $('#classifyWithAI').on('change', function() {
-        const isChecked = $(this).is(':checked');
-        $('#channelDefinitionsSection').toggle(isChecked);
-        $('#aiColumnsSection').toggle(isChecked);
-        $('.ai-column').prop('disabled', !isChecked);
-        if (isChecked) {
-            $('.ai-column').prop('checked', true);
-        } else {
-            $('.ai-column').prop('checked', false);
-        }
-    });
-
-    // Handle channel definitions file upload
-    $('#channelDefinitionsFile').on('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                channelDefinitions = event.target.result;
-                localStorage.setItem('channelDefinitions', channelDefinitions);
-                $('#channelFileStatus').removeClass('bg-secondary').addClass('bg-success').text('Loaded ✓');
-            };
-            reader.readAsText(file);
-        }
-    });
-
-    // Clear channel definitions
-    $('#clearChannelDefs').on('click', function() {
-        channelDefinitions = '';
-        localStorage.removeItem('channelDefinitions');
-        $('#channelDefinitionsFile').val('');
-        $('#channelFileStatus').removeClass('bg-success').addClass('bg-secondary').text('Not loaded');
-    });
-
-    // Check if channel definitions already loaded from localStorage
-    if (channelDefinitions) {
-        $('#channelFileStatus').removeClass('bg-secondary').addClass('bg-success').text('Loaded ✓');
-    }
-
-    // Initialize AI columns state
-    $('.ai-column').prop('disabled', !$('#classifyWithAI').is(':checked'));
 }
 
 /**
@@ -242,7 +193,6 @@ async function performSearch() {
     }
 
     const includePeople = $('#includePeople').is(':checked');
-    const classifyWithAI = $('#classifyWithAI').is(':checked');
 
     const searchData = {
         sic_codes: sicCodes.length > 0 ? sicCodes : null,
@@ -254,9 +204,7 @@ async function performSearch() {
     };
 
     // Update loading text based on options
-    if (classifyWithAI) {
-        $('#loadingText').text('Searching Companies House API...');
-    } else if (includePeople) {
+    if (includePeople) {
         $('#loadingText').text('Searching and fetching directors/owners data...');
     } else {
         $('#loadingText').text('Searching Companies House API...');
@@ -278,13 +226,7 @@ async function performSearch() {
             throw new Error(errorData.detail || 'Search failed');
         }
 
-        let data = await response.json();
-
-        // If AI classification is enabled, classify the results
-        if (classifyWithAI && data.companies.length > 0) {
-            $('#loadingText').text(`Classifying ${data.companies.length} companies with AI...`);
-            data = await classifyCompanies(data.companies);
-        }
+        const data = await response.json();
 
         currentResults = data.companies;
         displayResults(data);
@@ -294,37 +236,6 @@ async function performSearch() {
         alert('Search failed: ' + error.message);
     } finally {
         hideLoading();
-    }
-}
-
-/**
- * Classify companies using AI
- */
-async function classifyCompanies(companies) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/classify`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                companies: companies,
-                channel_definitions: channelDefinitions || null
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Classification failed');
-        }
-
-        return await response.json();
-
-    } catch (error) {
-        console.error('Classification error:', error);
-        // Return original companies if classification fails
-        alert('AI Classification failed: ' + error.message + '\n\nShowing results without classification.');
-        return { count: companies.length, companies: companies };
     }
 }
 
