@@ -14,7 +14,3 @@ RATE_LIMIT_BACKOFF = 60  # seconds to wait on 429
 
 # CORS - allow all origins in production (frontend served from same domain)
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",") if os.getenv("CORS_ORIGINS") else ["*"]
-
-# Claude AI API (for company classification)
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-CLAUDE_MODEL = "claude-sonnet-4-20250514"
