@@ -56,6 +56,14 @@ RELEVANCE_KEYWORDS = [
     'plant', 'industrial', 'cv '
 ]
 
+# Truck-specific keywords — Searches 3 & 4 require at least one of these
+# alongside "tyre/tire" to filter out generic tyre shops
+TRUCK_KEYWORDS = [
+    'truck', 'commercial', 'hgv', 'fleet', 'lorry',
+    'van', 'trailer', 'bus', 'coach', 'heavy',
+    'plant', 'industrial'
+]
+
 # Northern Ireland address indicators
 NI_INDICATORS = [
     'NORTHERN IRELAND', 'BELFAST', 'ANTRIM', 'ARMAGH',
@@ -339,7 +347,7 @@ def calc_relevance_score(company_name):
 
 # ─── Search Strategy ─────────────────────────────────────────────────────────
 
-def run_search(api, label, sic_codes=None, include_kw=None, exclude_kw=None):
+def run_search(api, label, sic_codes=None, include_kw=None, exclude_kw=None, require_truck_kw=False):
     logger.info(f"\n--- {label} ---")
     companies = []
 
@@ -353,6 +361,10 @@ def run_search(api, label, sic_codes=None, include_kw=None, exclude_kw=None):
         for kw in include_kw:
             companies.extend(api.search_by_name(kw))
         companies = deduplicate(companies)
+
+    # Require at least one truck keyword in company name (for SIC-based searches)
+    if require_truck_kw:
+        companies = filter_include_keywords(companies, TRUCK_KEYWORDS)
 
     # Apply search-specific excludes
     if exclude_kw:
@@ -389,16 +401,18 @@ def main():
                     include_kw=["truck tyre", "truck tire", "commercial tyre",
                                 "commercial tire", "HGV tyre"])
 
-    # Search 3: SIC 45320 (retail vehicle parts) + tyre, exclude non-truck
-    s3 = run_search(api, "SIC 45320 + tyre (retail)",
+    # Search 3: SIC 45320 (retail vehicle parts) + tyre + must have truck keyword
+    s3 = run_search(api, "SIC 45320 + tyre + truck keyword (retail)",
                     sic_codes=["45320"],
                     include_kw=["tyre", "tire"],
-                    exclude_kw=["car", "bicycle", "cycle", "motorcycle", "motorbike"])
+                    exclude_kw=["car", "bicycle", "cycle", "motorcycle", "motorbike"],
+                    require_truck_kw=True)
 
-    # Search 4: SIC 45310 (wholesale vehicle parts) + tyre
-    s4 = run_search(api, "SIC 45310 + tyre (wholesale)",
+    # Search 4: SIC 45310 (wholesale vehicle parts) + tyre + must have truck keyword
+    s4 = run_search(api, "SIC 45310 + tyre + truck keyword (wholesale)",
                     sic_codes=["45310"],
-                    include_kw=["tyre", "tire"])
+                    include_kw=["tyre", "tire"],
+                    require_truck_kw=True)
 
     # Combine all results, merge search_source for duplicates
     all_companies = s1 + s2 + s3 + s4
