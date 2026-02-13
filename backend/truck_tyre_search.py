@@ -40,6 +40,22 @@ CORPORATE_KEYWORDS = [
     'capital', 'investments', 'enterprises'
 ]
 
+# Global exclude keywords — filter out companies that are clearly not truck tyre specialists
+GLOBAL_EXCLUDES = [
+    'car', 'bicycle', 'cycle', 'motorcycle', 'motorbike',
+    'alloy', 'exhaust', 'MOT', 'garage', 'auto centre',
+    'karting', 'kart', 'racing', 'golf', 'scooter',
+    'wheelchair', 'pushchair', 'pram', 'buggy',
+    'aircraft', 'aero', 'aviation'
+]
+
+# Keywords that indicate a truck/commercial tyre specialist (for relevance scoring)
+RELEVANCE_KEYWORDS = [
+    'truck', 'commercial', 'hgv', 'fleet', 'lorry',
+    'van', 'trailer', 'bus', 'coach', 'heavy',
+    'plant', 'industrial', 'cv '
+]
+
 # Northern Ireland address indicators
 NI_INDICATORS = [
     'NORTHERN IRELAND', 'BELFAST', 'ANTRIM', 'ARMAGH',
@@ -313,6 +329,14 @@ def is_likely_chain(psc_names):
     return 'No'
 
 
+# ─── Relevance Scoring ──────────────────────────────────────────────────────
+
+def calc_relevance_score(company_name):
+    """Score how likely a company is a truck tyre specialist (higher = more relevant)."""
+    name = company_name.lower()
+    return sum(1 for kw in RELEVANCE_KEYWORDS if kw in name)
+
+
 # ─── Search Strategy ─────────────────────────────────────────────────────────
 
 def run_search(api, label, sic_codes=None, include_kw=None, exclude_kw=None):
@@ -330,8 +354,12 @@ def run_search(api, label, sic_codes=None, include_kw=None, exclude_kw=None):
             companies.extend(api.search_by_name(kw))
         companies = deduplicate(companies)
 
+    # Apply search-specific excludes
     if exclude_kw:
         companies = filter_exclude_keywords(companies, exclude_kw)
+
+    # Apply global excludes to all searches
+    companies = filter_exclude_keywords(companies, GLOBAL_EXCLUDES)
 
     companies = filter_ni(companies)
 
@@ -399,15 +427,17 @@ def main():
     logger.info("(This may take a while due to API rate limits)\n")
     enriched = api.enrich_with_people(unique_companies)
 
-    # Add chain flag
+    # Add chain flag and relevance score
     for company in enriched:
         company['likely_chain'] = is_likely_chain(company.get('psc_names', ''))
+        company['relevance_score'] = calc_relevance_score(company.get('company_name', ''))
 
     # Export to Excel
     output_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'truck_tyre_specialists.xlsx')
 
     columns = [
-        'company_name', 'company_number', 'company_status', 'likely_chain',
+        'company_name', 'company_number', 'company_status',
+        'relevance_score', 'likely_chain',
         'search_source', 'sic_codes', 'sic_descriptions',
         'full_address', 'locality', 'region', 'postal_code',
         'date_of_creation',
@@ -421,17 +451,30 @@ def main():
     extra = [c for c in df.columns if c not in columns]
     df = df[ordered + extra]
 
+    # Sort by relevance score (highest first), then company name
+    df = df.sort_values(['relevance_score', 'company_name'], ascending=[False, True])
+
     df.to_excel(output_file, index=False, engine='openpyxl')
 
     # Summary
     chain_counts = df['likely_chain'].value_counts()
+    high_relevance = len(df[df['relevance_score'] >= 2])
+    medium_relevance = len(df[df['relevance_score'] == 1])
+    low_relevance = len(df[df['relevance_score'] == 0])
     logger.info("\n" + "=" * 60)
     logger.info("  RESULTS SUMMARY")
     logger.info("=" * 60)
     logger.info(f"Total companies:    {len(df)}")
-    logger.info(f"Likely Chain:       {chain_counts.get('Yes', 0)}")
-    logger.info(f"Likely Independent: {chain_counts.get('No', 0)}")
-    logger.info(f"Unknown:            {chain_counts.get('Unknown', 0)}")
+    logger.info(f"")
+    logger.info(f"Relevance Score:")
+    logger.info(f"  High (2+):        {high_relevance}  <-- review these first")
+    logger.info(f"  Medium (1):       {medium_relevance}")
+    logger.info(f"  Low (0):          {low_relevance}")
+    logger.info(f"")
+    logger.info(f"Chain Detection:")
+    logger.info(f"  Likely Chain:     {chain_counts.get('Yes', 0)}")
+    logger.info(f"  Independent:      {chain_counts.get('No', 0)}")
+    logger.info(f"  Unknown:          {chain_counts.get('Unknown', 0)}")
     logger.info(f"\nExported to: {output_file}")
 
 
