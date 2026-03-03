@@ -706,18 +706,20 @@ class CompaniesHouseAPI:
     def search_by_sic_codes(
         self,
         sic_codes: List[str],
-        active_only: bool = True
+        active_only: bool = True,
+        company_name_includes: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         Search companies by SIC codes.
         Returns all companies matching any of the provided SIC codes.
+        Optionally filter by company_name_includes at the API level (much faster).
         """
         all_companies = []
         seen_company_numbers = set()
 
         for sic_code in sic_codes:
-            logger.info(f"Searching SIC code: {sic_code}")
-            companies = self._search_single_sic(sic_code, active_only)
+            logger.info(f"Searching SIC code: {sic_code}" + (f" with name filter '{company_name_includes}'" if company_name_includes else ""))
+            companies = self._search_single_sic(sic_code, active_only, company_name_includes)
 
             # Deduplicate
             for company in companies:
@@ -792,7 +794,8 @@ class CompaniesHouseAPI:
     def _search_single_sic(
         self,
         sic_code: str,
-        active_only: bool = True
+        active_only: bool = True,
+        company_name_includes: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """Search companies for a single SIC code with pagination."""
         companies = []
@@ -808,6 +811,9 @@ class CompaniesHouseAPI:
             if active_only:
                 params['company_status'] = 'active'
 
+            if company_name_includes:
+                params['company_name_includes'] = company_name_includes
+
             try:
                 response = self._make_request('/advanced-search/companies', params)
 
@@ -818,14 +824,19 @@ class CompaniesHouseAPI:
                 if not items:
                     break
 
+                # Log total hits on first page
+                hits = response.get('hits', 0)
+                if start_index == 0:
+                    logger.info(f"SIC {sic_code}: {hits} total hits" + (f" (filtered by '{company_name_includes}')" if company_name_includes else ""))
+
                 # Process each company
                 for item in items:
                     company = self._process_company(item)
                     companies.append(company)
 
-                # Check if we've reached the end
-                hits = response.get('hits', 0)
                 start_index += len(items)
+
+                logger.info(f"SIC {sic_code}: fetched {start_index}/{hits}")
 
                 if start_index >= hits or start_index >= 10000:  # API limit
                     break
