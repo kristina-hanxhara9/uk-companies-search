@@ -103,17 +103,33 @@ async def search_companies(request: SearchRequest):
         companies = []
 
         if has_sic_codes:
-            # Search by SIC codes
-            companies = api_client.search_by_sic_codes(
-                sic_codes=request.sic_codes,
-                active_only=request.active_only
-            )
-            logger.info(f"Found {len(companies)} companies from SIC code search")
-
-            # If we have SIC codes AND include keywords, filter the results
             if has_include_keywords:
-                companies = filter_by_include_keywords(companies, request.include_keywords)
-                logger.info(f"After include keyword filter: {len(companies)} companies")
+                # SIC codes + include keywords: search each keyword at the API level
+                # This is MUCH faster than fetching all SIC results then filtering locally
+                all_companies = []
+                seen_company_numbers = set()
+
+                for keyword in request.include_keywords:
+                    keyword_results = api_client.search_by_sic_codes(
+                        sic_codes=request.sic_codes,
+                        active_only=request.active_only,
+                        company_name_includes=keyword
+                    )
+                    for company in keyword_results:
+                        company_num = company.get('company_number')
+                        if company_num and company_num not in seen_company_numbers:
+                            seen_company_numbers.add(company_num)
+                            all_companies.append(company)
+
+                companies = all_companies
+                logger.info(f"Found {len(companies)} companies from SIC + keyword search")
+            else:
+                # SIC codes only (no keywords) - fetch all companies for these SIC codes
+                companies = api_client.search_by_sic_codes(
+                    sic_codes=request.sic_codes,
+                    active_only=request.active_only
+                )
+                logger.info(f"Found {len(companies)} companies from SIC code search")
         else:
             # No SIC codes - search by each keyword directly
             all_companies = []
