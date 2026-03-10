@@ -1103,6 +1103,32 @@ class CompaniesHouseAPI:
             logger.error(f"Error fetching PSC for {company_number}: {e}")
             return {'psc_count': 0, 'psc_names': '', 'psc_control': ''}
 
+    def get_company_profile_accounts(self, company_number: str) -> Dict[str, str]:
+        """
+        Fetch company profile to get accounts type info.
+        The advanced search API doesn't return accounts data,
+        so we need a separate profile call.
+        """
+        try:
+            response = self._make_request(f'/company/{company_number}')
+
+            if response is None:
+                return {'last_accounts_type': ''}
+
+            accounts = response.get('accounts', {})
+            last_accounts = accounts.get('last_accounts', {})
+            accounts_type = last_accounts.get('type', '')
+
+            # The API sometimes returns the string "null"
+            if accounts_type == 'null':
+                accounts_type = ''
+
+            return {'last_accounts_type': accounts_type}
+
+        except Exception as e:
+            logger.error(f"Error fetching profile for {company_number}: {e}")
+            return {'last_accounts_type': ''}
+
     def enrich_with_people_data(self, companies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Enrich company data with officers and PSC information.
@@ -1125,6 +1151,12 @@ class CompaniesHouseAPI:
                 psc_data = self.get_psc(company_number)
                 company.update(psc_data)
 
+                # Get accounts type from company profile
+                # (advanced search doesn't return this)
+                if not company.get('last_accounts_type'):
+                    accounts_data = self.get_company_profile_accounts(company_number)
+                    company.update(accounts_data)
+
                 # Rate limit delay
                 time.sleep(RATE_LIMIT_DELAY)
             else:
@@ -1140,6 +1172,24 @@ class CompaniesHouseAPI:
             enriched.append(company)
 
         return enriched
+
+    def enrich_with_accounts_type(self, companies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Lightweight enrichment that only fetches company profile
+        to get last_accounts_type. Used when people enrichment is not requested.
+        """
+        total = len(companies)
+
+        for i, company in enumerate(companies):
+            company_number = company.get('company_number')
+
+            if company_number and not company.get('last_accounts_type'):
+                logger.info(f"Fetching accounts type {i+1}/{total}: {company_number}")
+                accounts_data = self.get_company_profile_accounts(company_number)
+                company.update(accounts_data)
+                time.sleep(RATE_LIMIT_DELAY)
+
+        return companies
 
 
 def get_all_sic_codes() -> List[Dict[str, str]]:

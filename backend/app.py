@@ -199,6 +199,11 @@ async def search_companies(request: SearchRequest):
             logger.info(f"Enriching {len(companies)} companies with officers/PSC data...")
             companies = api_client.enrich_with_people_data(companies)
             logger.info("Enrichment complete")
+        elif companies:
+            # Even without people data, fetch accounts type for classification
+            logger.info(f"Fetching accounts type for {len(companies)} companies...")
+            companies = api_client.enrich_with_accounts_type(companies)
+            logger.info("Accounts type enrichment complete")
 
         # Add business size classification and chain detection
         companies = enrich_with_classification(companies)

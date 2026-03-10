@@ -65,13 +65,21 @@ def classify_business_size(company):
     if company_type == 'plc' and rank < 4:
         category, rank = ('Large', 4)
 
-    # Many directors suggests at least Medium
-    if directors_count >= 5 and rank > 0 and rank < 3:
-        category, rank = ('Medium', 3)
-
-    # Having charges (secured lending) suggests at least Small
-    if has_charges and rank > 0 and rank < 2:
-        category, rank = ('Small', 2)
+    # When accounts type is unknown, use secondary signals to estimate size
+    if rank == -1:
+        # Many directors suggests at least Medium
+        if directors_count >= 5:
+            category, rank = ('Medium', 3)
+        elif directors_count >= 3 or has_charges:
+            category, rank = ('Small', 2)
+        elif directors_count >= 1:
+            category, rank = ('Micro', 1)
+    else:
+        # When we have accounts type, only nudge upward
+        if directors_count >= 5 and rank < 3:
+            category, rank = ('Medium', 3)
+        if has_charges and rank < 2:
+            category, rank = ('Small', 2)
 
     return {'size_category': category, 'size_rank': rank}
 
@@ -100,6 +108,17 @@ def is_likely_chain(company):
             name_lower = name.strip().lower()
             if any(kw in name_lower for kw in CORPORATE_KEYWORDS):
                 return 'Yes'
+        # PSC data present but all individuals = likely independent
+        return 'No'
+
+    # Check company name for chain indicators
+    company_name = (company.get('company_name') or '').lower()
+    chain_name_keywords = ['group', 'holdings', 'franchise', 'national', 'uk ']
+    if any(kw in company_name for kw in chain_name_keywords):
+        return 'Yes'
+
+    # If we have accounts type and it's not a group type, lean toward No
+    if accounts_type and accounts_type in ACCOUNTS_TYPE_MAP:
         return 'No'
 
     return 'Unknown'
