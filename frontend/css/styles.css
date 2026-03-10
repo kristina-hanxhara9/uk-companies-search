@@ -406,8 +406,8 @@ body {
     display: inline-block;
 }
 
-/* ===== Chain Detection Badges ===== */
-.chain-yes {
+/* ===== Ownership Type Badges ===== */
+.ownership-chain {
     color: #ef4444;
     font-weight: 600;
     background: rgba(239, 68, 68, 0.1);
@@ -416,7 +416,7 @@ body {
     display: inline-block;
 }
 
-.chain-no {
+.ownership-independent {
     color: #10b981;
     font-weight: 600;
     background: rgba(16, 185, 129, 0.1);
@@ -425,7 +425,16 @@ body {
     display: inline-block;
 }
 
-.chain-unknown {
+.ownership-buying-group {
+    color: #3b82f6;
+    font-weight: 600;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.ownership-unknown {
     color: #9ca3af;
     font-weight: 600;
     background: rgba(156, 163, 175, 0.1);

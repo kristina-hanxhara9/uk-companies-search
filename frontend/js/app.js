@@ -55,7 +55,7 @@ const ALL_COLUMNS = {
     'psc_control': 'Control Type',
     // Classification columns
     'size_category': 'Business Size',
-    'likely_chain': 'Likely Chain',
+    'ownership_type': 'Ownership Type',
 };
 
 /**
@@ -294,8 +294,8 @@ function displayResults(data) {
             if (col === 'size_category') {
                 return formatSizeCategory(value);
             }
-            if (col === 'likely_chain') {
-                return formatChainStatus(value);
+            if (col === 'ownership_type') {
+                return formatOwnershipType(value);
             }
             // Make URL clickable
             if (col === 'companies_house_url' && value) {
@@ -379,16 +379,17 @@ function formatSizeCategory(value) {
 }
 
 /**
- * Format chain status with colored badge
+ * Format ownership type with colored badge
  */
-function formatChainStatus(value) {
+function formatOwnershipType(value) {
     if (!value) return '';
     const classMap = {
-        'yes': 'chain-yes',
-        'no': 'chain-no',
-        'unknown': 'chain-unknown',
+        'chain': 'ownership-chain',
+        'independent': 'ownership-independent',
+        'buying group': 'ownership-buying-group',
+        'unknown': 'ownership-unknown',
     };
-    const cls = classMap[value.toLowerCase()] || 'chain-unknown';
+    const cls = classMap[value.toLowerCase()] || 'ownership-unknown';
     return `<span class="${cls}">${value}</span>`;
 }
 

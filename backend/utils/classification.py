@@ -1,9 +1,11 @@
 """
-Business size classification and chain detection utilities.
+Business size classification and ownership type detection utilities.
 
 Uses Companies House accounts filing type as the primary indicator of company size,
 enhanced with secondary signals (directors count, charges, company type).
 """
+
+from utils.buying_groups import KNOWN_BUYING_GROUPS, BUYING_GROUP_KEYWORDS
 
 # Accounts type → size category mapping
 # Based on UK Companies Act thresholds:
@@ -84,53 +86,89 @@ def classify_business_size(company):
     return {'size_category': category, 'size_rank': rank}
 
 
-def is_likely_chain(company):
+def _check_buying_group(company):
     """
-    Determine if a company is likely part of a chain/group.
+    Check if a company is associated with a known buying group.
 
-    Returns 'Yes', 'No', or 'Unknown'.
+    Matches PSC names and company name against the curated known-list
+    and generic buying group keywords.
     """
+    # Collect all text to check
+    texts_to_check = []
+
+    company_name = (company.get('company_name') or '').lower()
+    if company_name:
+        texts_to_check.append(company_name)
+
+    psc_names = company.get('psc_names', '')
+    if psc_names and psc_names.strip():
+        for name in psc_names.split(';'):
+            name_stripped = name.strip().lower()
+            if name_stripped:
+                texts_to_check.append(name_stripped)
+
+    # Check against known buying group names and keywords
+    for text in texts_to_check:
+        for known in KNOWN_BUYING_GROUPS:
+            if known in text:
+                return True
+        for keyword in BUYING_GROUP_KEYWORDS:
+            if keyword in text:
+                return True
+
+    return False
+
+
+def classify_ownership(company):
+    """
+    Classify a company's ownership type.
+
+    Returns one of: 'Chain', 'Independent', 'Buying Group', or 'Unknown'.
+    """
+    # 1. Buying group check first (curated list + keywords)
+    if _check_buying_group(company):
+        return 'Buying Group'
+
+    # 2. Strong chain signals from accounts type
     accounts_type = (company.get('last_accounts_type') or '').strip().lower()
-
-    # Group/subsidiary accounts type is a strong signal
     if accounts_type in GROUP_ACCOUNTS_TYPES:
-        return 'Yes'
+        return 'Chain'
 
-    # PLC is typically a larger/chain entity
+    # 3. PLC is typically a chain/group entity
     company_type = (company.get('company_type') or '').lower()
     if company_type == 'plc':
-        return 'Yes'
+        return 'Chain'
 
-    # Check PSC names for corporate keywords
+    # 4. Check PSC names for corporate keywords
     psc_names = company.get('psc_names', '')
     if psc_names and psc_names.strip():
         for name in psc_names.split(';'):
             name_lower = name.strip().lower()
             if any(kw in name_lower for kw in CORPORATE_KEYWORDS):
-                return 'Yes'
+                return 'Chain'
         # PSC data present but all individuals = likely independent
-        return 'No'
+        return 'Independent'
 
-    # Check company name for chain indicators
+    # 5. Check company name for chain indicators
     company_name = (company.get('company_name') or '').lower()
     chain_name_keywords = ['group', 'holdings', 'franchise', 'national', 'uk ']
     if any(kw in company_name for kw in chain_name_keywords):
-        return 'Yes'
+        return 'Chain'
 
-    # If we have accounts type and it's not a group type, lean toward No
+    # 6. If we have accounts type and it's not a group type, lean toward Independent
     if accounts_type and accounts_type in ACCOUNTS_TYPE_MAP:
-        return 'No'
+        return 'Independent'
 
     return 'Unknown'
 
 
 def enrich_with_classification(companies):
     """
-    Add size_category, size_rank, and likely_chain to each company dict.
+    Add size_category, size_rank, and ownership_type to each company dict.
     """
     for company in companies:
         size_info = classify_business_size(company)
         company['size_category'] = size_info['size_category']
         company['size_rank'] = size_info['size_rank']
-        company['likely_chain'] = is_likely_chain(company)
+        company['ownership_type'] = classify_ownership(company)
     return companies
