@@ -53,6 +53,9 @@ const ALL_COLUMNS = {
     'psc_count': 'Owners Count',
     'psc_names': 'Owners Names',
     'psc_control': 'Control Type',
+    // Classification columns
+    'size_category': 'Business Size',
+    'likely_chain': 'Likely Chain',
 };
 
 /**
@@ -263,6 +266,23 @@ function displayResults(data) {
     headerHtml += '</tr></thead><tbody></tbody>';
     $('#companiesTable').html(headerHtml);
 
+    // Show search completeness info
+    if (data.search_metadata) {
+        const meta = data.search_metadata;
+        let cls = meta.hit_api_limit ? 'alert-warning' : 'alert-info';
+        let html = `<div class="alert ${cls} py-2 px-3 mb-2 small">`;
+        html += `<strong>Search Completeness:</strong> `;
+        html += `Retrieved ${meta.companies_retrieved.toLocaleString()} of ${meta.total_api_hits.toLocaleString()} API matches`;
+        if (meta.hit_api_limit) {
+            html += ` <span class="badge bg-warning text-dark ms-1">API limit reached (10,000)</span>`;
+            html += `<br><small>Some results may be missing. Try narrowing your search with more specific keywords.</small>`;
+        }
+        html += `</div>`;
+        $('#searchCompleteness').html(html);
+    } else {
+        $('#searchCompleteness').empty();
+    }
+
     // Prepare table data based on selected columns
     const tableData = data.companies.map(company => {
         return selectedColumns.map(col => {
@@ -270,6 +290,12 @@ function displayResults(data) {
             // Special formatting for status
             if (col === 'company_status') {
                 return formatStatus(value);
+            }
+            if (col === 'size_category') {
+                return formatSizeCategory(value);
+            }
+            if (col === 'likely_chain') {
+                return formatChainStatus(value);
             }
             // Make URL clickable
             if (col === 'companies_house_url' && value) {
@@ -330,6 +356,40 @@ function formatStatus(status) {
     }
 
     return `<span class="${className}">${status}</span>`;
+}
+
+/**
+ * Format business size category with colored badge
+ */
+function formatSizeCategory(value) {
+    if (!value) return '';
+    const classMap = {
+        'micro': 'size-micro',
+        'small': 'size-small',
+        'medium': 'size-medium',
+        'large': 'size-large',
+        'large (group)': 'size-large',
+        'subsidiary': 'size-subsidiary',
+        'dormant': 'size-dormant',
+        'new': 'size-dormant',
+        'unknown': 'size-unknown',
+    };
+    const cls = classMap[value.toLowerCase()] || 'size-unknown';
+    return `<span class="${cls}">${value}</span>`;
+}
+
+/**
+ * Format chain status with colored badge
+ */
+function formatChainStatus(value) {
+    if (!value) return '';
+    const classMap = {
+        'yes': 'chain-yes',
+        'no': 'chain-no',
+        'unknown': 'chain-unknown',
+    };
+    const cls = classMap[value.toLowerCase()] || 'chain-unknown';
+    return `<span class="${cls}">${value}</span>`;
 }
 
 /**
@@ -401,3 +461,111 @@ function hideLoading() {
     $('#searchSpinner').addClass('d-none');
     $('#searchBtnText').text('Search Companies');
 }
+
+/**
+ * Parse a CSV file containing known company numbers
+ */
+function parseKnownListCSV(text) {
+    const lines = text.trim().split('\n');
+    const companies = [];
+    const header = lines[0].toLowerCase();
+    const startIdx = header.includes('company') ? 1 : 0;
+    for (let i = startIdx; i < lines.length; i++) {
+        const parts = lines[i].split(',');
+        const companyNumber = parts[0].trim().replace(/"/g, '');
+        if (companyNumber) {
+            companies.push({
+                company_number: companyNumber,
+                company_name: parts.length > 1 ? parts[1].trim().replace(/"/g, '') : ''
+            });
+        }
+    }
+    return companies;
+}
+
+/**
+ * Display recall comparison results
+ */
+function displayRecallResults(data) {
+    let html = `
+        <div class="row text-center g-2 mt-2">
+            <div class="col-6 col-md-3">
+                <div class="card h-100"><div class="card-body py-2">
+                    <h4 class="mb-0">${(data.recall * 100).toFixed(1)}%</h4>
+                    <small class="text-muted">Recall</small>
+                </div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card h-100"><div class="card-body py-2">
+                    <h4 class="mb-0">${data.true_positives}</h4>
+                    <small class="text-muted">Found from known list</small>
+                </div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card h-100"><div class="card-body py-2">
+                    <h4 class="mb-0 text-danger">${data.false_negatives}</h4>
+                    <small class="text-muted">Missed</small>
+                </div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card h-100"><div class="card-body py-2">
+                    <h4 class="mb-0 text-success">${data.additional_found}</h4>
+                    <small class="text-muted">Additional found</small>
+                </div></div>
+            </div>
+        </div>`;
+
+    if (data.missed_companies && data.missed_companies.length > 0) {
+        html += `<details class="mt-2"><summary class="small fw-bold">Missed Companies (${data.missed_companies.length})</summary><ul class="small mt-1">`;
+        data.missed_companies.forEach(c => {
+            html += `<li>${c.company_number}${c.company_name ? ' - ' + c.company_name : ''}</li>`;
+        });
+        html += `</ul></details>`;
+    }
+
+    $('#recallResults').html(html);
+}
+
+// Initialize recall comparison handler
+$(document).ready(function() {
+    $(document).on('click', '#compareRecallBtn', async function() {
+        const fileInput = document.getElementById('knownListFile');
+        if (!fileInput || !fileInput.files[0]) {
+            alert('Please select a CSV file with known company numbers');
+            return;
+        }
+        if (!currentResults || currentResults.length === 0) {
+            alert('Please run a search first');
+            return;
+        }
+
+        const text = await fileInput.files[0].text();
+        const knownCompanies = parseKnownListCSV(text);
+
+        if (knownCompanies.length === 0) {
+            alert('No company numbers found in the file');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/recall/compare`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    known_companies: knownCompanies,
+                    search_results: currentResults
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Recall comparison failed');
+            }
+
+            const result = await response.json();
+            displayRecallResults(result);
+        } catch (error) {
+            console.error('Recall comparison error:', error);
+            alert('Recall comparison failed: ' + error.message);
+        }
+    });
+});

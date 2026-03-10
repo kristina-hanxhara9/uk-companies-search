@@ -702,6 +702,7 @@ class CompaniesHouseAPI:
         self.api_key = COMPANIES_HOUSE_API_KEY
         self.session = requests.Session()
         self.session.auth = (self.api_key, '')
+        self.last_search_metadata = {}
 
     def search_by_sic_codes(
         self,
@@ -716,10 +717,18 @@ class CompaniesHouseAPI:
         """
         all_companies = []
         seen_company_numbers = set()
+        total_api_hits = 0
+        hit_api_limit = False
+        queries_run = []
 
         for sic_code in sic_codes:
             logger.info(f"Searching SIC code: {sic_code}" + (f" with name filter '{company_name_includes}'" if company_name_includes else ""))
-            companies = self._search_single_sic(sic_code, active_only, company_name_includes)
+            companies, hits = self._search_single_sic(sic_code, active_only, company_name_includes)
+
+            total_api_hits += hits
+            if hits >= 10000:
+                hit_api_limit = True
+            queries_run.append({'query': f"SIC {sic_code}", 'hits': hits, 'retrieved': len(companies)})
 
             # Deduplicate
             for company in companies:
@@ -729,6 +738,13 @@ class CompaniesHouseAPI:
                     all_companies.append(company)
 
             logger.info(f"SIC {sic_code}: Found {len(companies)} companies (total unique: {len(all_companies)})")
+
+        self.last_search_metadata = {
+            'total_api_hits': total_api_hits,
+            'companies_retrieved': len(all_companies),
+            'hit_api_limit': hit_api_limit,
+            'queries_run': queries_run,
+        }
 
         return all_companies
 
@@ -744,6 +760,7 @@ class CompaniesHouseAPI:
         """
         companies = []
         start_index = 0
+        total_hits = 0
 
         logger.info(f"Searching for company name containing: {search_term}")
 
@@ -775,6 +792,7 @@ class CompaniesHouseAPI:
 
                 # Check if we've reached the end
                 hits = response.get('hits', 0)
+                total_hits = hits
                 start_index += len(items)
 
                 logger.info(f"Search '{search_term}': fetched {start_index}/{hits} companies")
@@ -789,6 +807,14 @@ class CompaniesHouseAPI:
                 break
 
         logger.info(f"Search '{search_term}': Found {len(companies)} total companies")
+
+        self.last_search_metadata = {
+            'total_api_hits': total_hits,
+            'companies_retrieved': len(companies),
+            'hit_api_limit': total_hits >= 10000,
+            'queries_run': [{'query': search_term, 'hits': total_hits, 'retrieved': len(companies)}],
+        }
+
         return companies
 
     def _search_single_sic(
@@ -796,10 +822,12 @@ class CompaniesHouseAPI:
         sic_code: str,
         active_only: bool = True,
         company_name_includes: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
-        """Search companies for a single SIC code with pagination."""
+    ):
+        """Search companies for a single SIC code with pagination.
+        Returns (companies_list, total_hits)."""
         companies = []
         start_index = 0
+        total_hits = 0
 
         while True:
             params = {
@@ -826,6 +854,7 @@ class CompaniesHouseAPI:
 
                 # Log total hits on first page
                 hits = response.get('hits', 0)
+                total_hits = hits
                 if start_index == 0:
                     logger.info(f"SIC {sic_code}: {hits} total hits" + (f" (filtered by '{company_name_includes}')" if company_name_includes else ""))
 
@@ -847,7 +876,7 @@ class CompaniesHouseAPI:
                 logger.error(f"Error searching SIC {sic_code}: {e}")
                 break
 
-        return companies
+        return companies, total_hits
 
     def _make_request(
         self,

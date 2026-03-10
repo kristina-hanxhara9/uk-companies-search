@@ -225,6 +225,20 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- Classification section -->
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <p class="column-section-title">Classification</p>
+                                    <div class="form-check form-check-sm">
+                                        <input class="form-check-input column-checkbox" type="checkbox" id="col_size_category" data-column="size_category" checked>
+                                        <label class="form-check-label small" for="col_size_category">Business Size</label>
+                                    </div>
+                                    <div class="form-check form-check-sm">
+                                        <input class="form-check-input column-checkbox" type="checkbox" id="col_likely_chain" data-column="likely_chain" checked>
+                                        <label class="form-check-label small" for="col_likely_chain">Likely Chain</label>
+                                    </div>
+                                </div>
+                            </div>
                             <!-- Directors & Owners section -->
                             <div class="row mt-2" id="peopleColumnsSection">
                                 <div class="col-md-6">
@@ -306,6 +320,28 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <div id="searchCompleteness"></div>
+                    <!-- Recall Analysis -->
+                    <div class="accordion mb-3" id="recallAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2 small" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#recallSection">
+                                    Recall Analysis (Compare with Known List)
+                                </button>
+                            </h2>
+                            <div id="recallSection" class="accordion-collapse collapse">
+                                <div class="accordion-body py-2">
+                                    <p class="text-muted small mb-2">Upload a CSV with company numbers (one per row) to measure how many your search found.</p>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="file" id="knownListFile" accept=".csv,.txt" class="form-control form-control-sm" style="max-width: 300px;">
+                                        <button class="btn btn-outline-primary btn-sm" id="compareRecallBtn">Compare</button>
+                                    </div>
+                                    <div id="recallResults"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table id="companiesTable" class="table table-striped table-hover" style="width:100%">
                             <thead>
