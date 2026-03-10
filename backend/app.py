@@ -20,6 +20,8 @@ from utils.filters import (
     filter_active_only,
     deduplicate_companies
 )
+from utils.classification import enrich_with_classification
+from utils.recall import compare_with_known_list
 
 # Configure logging
 logging.basicConfig(
@@ -64,6 +66,11 @@ class ExportRequest(BaseModel):
     column_names: Optional[dict] = None
 
 
+class RecallCompareRequest(BaseModel):
+    known_companies: List[dict]
+    search_results: List[dict]
+
+
 # Store results in memory for export (in production, use Redis or similar)
 search_results_cache = {}
 
@@ -101,6 +108,11 @@ async def search_companies(request: SearchRequest):
 
     try:
         companies = []
+        # Accumulate search metadata across multiple queries
+        accumulated_hits = 0
+        accumulated_retrieved = 0
+        accumulated_limit_hit = False
+        accumulated_queries = []
 
         if has_sic_codes:
             if has_include_keywords:
@@ -115,6 +127,12 @@ async def search_companies(request: SearchRequest):
                         active_only=request.active_only,
                         company_name_includes=keyword
                     )
+                    meta = api_client.last_search_metadata
+                    accumulated_hits += meta.get('total_api_hits', 0)
+                    accumulated_retrieved += meta.get('companies_retrieved', 0)
+                    accumulated_limit_hit = accumulated_limit_hit or meta.get('hit_api_limit', False)
+                    accumulated_queries.extend(meta.get('queries_run', []))
+
                     for company in keyword_results:
                         company_num = company.get('company_number')
                         if company_num and company_num not in seen_company_numbers:
@@ -129,6 +147,11 @@ async def search_companies(request: SearchRequest):
                     sic_codes=request.sic_codes,
                     active_only=request.active_only
                 )
+                meta = api_client.last_search_metadata
+                accumulated_hits = meta.get('total_api_hits', 0)
+                accumulated_retrieved = meta.get('companies_retrieved', 0)
+                accumulated_limit_hit = meta.get('hit_api_limit', False)
+                accumulated_queries = meta.get('queries_run', [])
                 logger.info(f"Found {len(companies)} companies from SIC code search")
         else:
             # No SIC codes - search by each keyword directly
@@ -140,6 +163,12 @@ async def search_companies(request: SearchRequest):
                     search_term=keyword,
                     active_only=request.active_only
                 )
+                meta = api_client.last_search_metadata
+                accumulated_hits += meta.get('total_api_hits', 0)
+                accumulated_retrieved += meta.get('companies_retrieved', 0)
+                accumulated_limit_hit = accumulated_limit_hit or meta.get('hit_api_limit', False)
+                accumulated_queries.extend(meta.get('queries_run', []))
+
                 # Deduplicate across keywords
                 for company in keyword_results:
                     company_num = company.get('company_number')
@@ -171,9 +200,18 @@ async def search_companies(request: SearchRequest):
             companies = api_client.enrich_with_people_data(companies)
             logger.info("Enrichment complete")
 
+        # Add business size classification and chain detection
+        companies = enrich_with_classification(companies)
+
         return {
             "count": len(companies),
-            "companies": companies
+            "companies": companies,
+            "search_metadata": {
+                "total_api_hits": accumulated_hits,
+                "companies_retrieved": accumulated_retrieved,
+                "hit_api_limit": accumulated_limit_hit,
+                "queries_run": accumulated_queries,
+            }
         }
 
     except Exception as e:
@@ -221,6 +259,16 @@ async def export_excel(request: ExportRequest):
             "Content-Disposition": "attachment; filename=uk_companies.xlsx"
         }
     )
+
+
+@app.post("/api/recall/compare")
+async def recall_compare(request: RecallCompareRequest):
+    """Compare search results against a known list of companies to measure recall."""
+    if not request.known_companies:
+        raise HTTPException(status_code=400, detail="No known companies provided")
+
+    result = compare_with_known_list(request.search_results, request.known_companies)
+    return result
 
 
 @app.get("/health")
